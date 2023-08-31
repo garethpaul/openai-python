@@ -73,7 +73,8 @@ class Engine:
             "Engine.generate is deprecated, use Completion.create", DeprecationWarning
         )
         if args.completions and args.completions > 1 and args.stream:
-            raise ValueError("Can't stream multiple completions with openai CLI")
+            raise ValueError(
+                "Can't stream multiple completions with openai CLI")
 
         kwargs = {}
         if args.model is not None:
@@ -96,7 +97,8 @@ class Engine:
             completions = len(part["data"])
             for c_idx, c in enumerate(part["data"]):
                 if completions > 1:
-                    sys.stdout.write("===== Completion {} =====\n".format(c_idx))
+                    sys.stdout.write(
+                        "===== Completion {} =====\n".format(c_idx))
                 sys.stdout.write("".join(c["text"]))
                 if completions > 1:
                     sys.stdout.write("\n")
@@ -106,6 +108,74 @@ class Engine:
     def list(cls, args):
         engines = openai.Engine.list()
         display(engines)
+
+
+class Event:
+    @classmethod
+    def start_chat_session(cls, initial_system_message):
+        return [
+            {"role": "system", "content": initial_system_message}
+        ]
+
+    @classmethod
+    def add_message_to_session(cls, session, role, content):
+        session.append({"role": role, "content": content})
+        return session
+
+    @classmethod
+    def ask_question(cls, session, question):
+        return cls.add_message_to_session(session, "user", question)
+
+    @classmethod
+    def add_system_instruction(cls, session, instruction):
+        return cls.add_message_to_session(session, "system", instruction)
+
+    @classmethod
+    def create(cls, args):
+        if args.n is not None and args.n > 1 and args.stream:
+            raise ValueError(
+                "Can't stream chat completions with n>1 with the current CLI"
+            )
+
+        # I'm assuming that `args.message` is a list of tuples where the first element
+        # is the role and the second is the content. If not, modify as necessary.
+        messages = [
+            {"role": role, "content": content} for role, content in args.message
+        ]
+
+        resp = openai.ChatCompletion.create(
+            # Required
+            model=args.model if hasattr(args, 'model') else "gpt-3.5-turbo",
+            engine=args.engine,
+            messages=messages,
+            # Optional
+            n=args.n,
+            max_tokens=args.max_tokens,
+            temperature=args.temperature if hasattr(
+                args, 'temperature') else 0.7,
+            top_p=args.top_p,
+            stop=args.stop,
+            stream=args.stream,
+        )
+
+        if not args.stream:
+            resp = [resp]
+
+        for part in resp:
+            choices = part["choices"]
+            for c_idx, c in enumerate(sorted(choices, key=lambda s: s["index"])):
+                if len(choices) > 1:
+                    sys.stdout.write(
+                        "===== Chat Completion {} =====\n".format(c_idx))
+                if args.stream:
+                    delta = c["delta"]
+                    if "content" in delta:
+                        sys.stdout.write(delta["content"])
+                else:
+                    sys.stdout.write(c["message"]["content"])
+                    if len(choices) > 1:  # not in streams
+                        sys.stdout.write("\n")
+                sys.stdout.flush()
 
 
 class ChatCompletion:
@@ -140,7 +210,8 @@ class ChatCompletion:
             choices = part["choices"]
             for c_idx, c in enumerate(sorted(choices, key=lambda s: s["index"])):
                 if len(choices) > 1:
-                    sys.stdout.write("===== Chat Completion {} =====\n".format(c_idx))
+                    sys.stdout.write(
+                        "===== Chat Completion {} =====\n".format(c_idx))
                 if args.stream:
                     delta = c["delta"]
                     if "content" in delta:
@@ -156,7 +227,8 @@ class Completion:
     @classmethod
     def create(cls, args):
         if args.n is not None and args.n > 1 and args.stream:
-            raise ValueError("Can't stream completions with n>1 with the current CLI")
+            raise ValueError(
+                "Can't stream completions with n>1 with the current CLI")
 
         if args.engine and args.model:
             warnings.warn(
@@ -183,7 +255,8 @@ class Completion:
             choices = part["choices"]
             for c_idx, c in enumerate(sorted(choices, key=lambda s: s["index"])):
                 if len(choices) > 1:
-                    sys.stdout.write("===== Completion {} =====\n".format(c_idx))
+                    sys.stdout.write(
+                        "===== Completion {} =====\n".format(c_idx))
                 sys.stdout.write(c["text"])
                 if len(choices) > 1:
                     sys.stdout.write("\n")
@@ -235,7 +308,8 @@ class File:
     @classmethod
     def create(cls, args):
         with open(args.file, "rb") as file_reader:
-            buffer_reader = BufferReader(file_reader.read(), desc="Upload progress")
+            buffer_reader = BufferReader(
+                file_reader.read(), desc="Upload progress")
         resp = openai.File.create(
             file=buffer_reader,
             purpose=args.purpose,
@@ -273,7 +347,8 @@ class Image:
     @classmethod
     def create_variation(cls, args):
         with open(args.image, "rb") as file_reader:
-            buffer_reader = BufferReader(file_reader.read(), desc="Upload progress")
+            buffer_reader = BufferReader(
+                file_reader.read(), desc="Upload progress")
         resp = openai.Image.create_variation(
             image=buffer_reader,
             size=args.size,
@@ -285,11 +360,13 @@ class Image:
     @classmethod
     def create_edit(cls, args):
         with open(args.image, "rb") as file_reader:
-            image_reader = BufferReader(file_reader.read(), desc="Upload progress")
+            image_reader = BufferReader(
+                file_reader.read(), desc="Upload progress")
         mask_reader = None
         if args.mask is not None:
             with open(args.mask, "rb") as file_reader:
-                mask_reader = BufferReader(file_reader.read(), desc="Upload progress")
+                mask_reader = BufferReader(
+                    file_reader.read(), desc="Upload progress")
         resp = openai.Image.create_edit(
             image=image_reader,
             mask=mask_reader,
@@ -366,7 +443,8 @@ class FineTune:
     ):
         # Exactly one of `file` or `content` must be provided
         if (file is None) == (content is None):
-            raise ValueError("Exactly one of `file` or `content` must be provided")
+            raise ValueError(
+                "Exactly one of `file` or `content` must be provided")
 
         if content is None:
             assert file is not None
@@ -396,7 +474,8 @@ class FineTune:
                     inp = sys.stdin.readline().strip()
                     if inp in file_ids:
                         sys.stdout.write(
-                            "Reusing already uploaded file: {id}\n".format(id=inp)
+                            "Reusing already uploaded file: {id}\n".format(
+                                id=inp)
                         )
                         return inp
                     elif inp == "":
@@ -511,7 +590,8 @@ class FineTune:
                 message=(
                     "The --stream parameter is deprecated, use fine_tunes.follow "
                     "instead:\n\n"
-                    "  openai api fine_tunes.follow -i {id}\n".format(id=args.id)
+                    "  openai api fine_tunes.follow -i {id}\n".format(
+                        id=args.id)
                 ),
             )
 
@@ -556,7 +636,8 @@ class FineTune:
             sys.stdout.write(
                 "\nStream interrupted (client disconnected).\n"
                 "To resume the stream, run:\n\n"
-                "  openai api fine_tunes.follow -i {job_id}\n\n".format(job_id=job_id)
+                "  openai api fine_tunes.follow -i {job_id}\n\n".format(
+                    job_id=job_id)
             )
             return
 
@@ -638,7 +719,8 @@ class FineTuningJob:
     ):
         # Exactly one of `file` or `content` must be provided
         if (file is None) == (content is None):
-            raise ValueError("Exactly one of `file` or `content` must be provided")
+            raise ValueError(
+                "Exactly one of `file` or `content` must be provided")
 
         if content is None:
             assert file is not None
@@ -670,7 +752,8 @@ class FineTuningJob:
                     inp = sys.stdin.readline().strip()
                     if inp in file_ids:
                         sys.stdout.write(
-                            "Reusing already uploaded file: {id}\n".format(id=inp)
+                            "Reusing already uploaded file: {id}\n".format(
+                                id=inp)
                         )
                         return inp
                     elif inp == "":
@@ -693,7 +776,8 @@ class FineTuningJob:
                 file=user_provided_file or file, id=resp["id"]
             )
         )
-        sys.stdout.write("Waiting for file to finish processing before proceeding..\n")
+        sys.stdout.write(
+            "Waiting for file to finish processing before proceeding..\n")
         sys.stdout.flush()
         status = openai.File.wait_for_processing(resp["id"])
         if status != "processed":
@@ -773,7 +857,8 @@ class FineTuningJob:
             raise openai.error.InvalidRequestError(
                 f"No results file available for fine-tune {args.id}", "id"
             )
-        result_file = openai.FineTuningJob.retrieve(id=args.id)["result_files"][0]
+        result_file = openai.FineTuningJob.retrieve(id=args.id)[
+            "result_files"][0]
         resp = openai.File.download(id=result_file)
         print(resp.decode("utf-8"))
 
@@ -870,8 +955,10 @@ def api_register(parser):
     sub.add_argument(
         "--stream", help="Stream tokens as they're ready.", action="store_true"
     )
-    sub.add_argument("-c", "--context", help="An optional context to generate from")
-    sub.add_argument("-l", "--length", help="How many tokens to generate", type=int)
+    sub.add_argument("-c", "--context",
+                     help="An optional context to generate from")
+    sub.add_argument("-l", "--length",
+                     help="How many tokens to generate", type=int)
     sub.add_argument(
         "-t",
         "--temperature",
@@ -988,7 +1075,8 @@ Mutually exclusive with `top_p`.""",
     sub.add_argument(
         "--stream", help="Stream tokens as they're ready.", action="store_true"
     )
-    sub.add_argument("-p", "--prompt", help="An optional prompt to complete from")
+    sub.add_argument("-p", "--prompt",
+                     help="An optional prompt to complete from")
     sub.add_argument(
         "-M", "--max-tokens", help="The maximum number of tokens to generate", type=int
     )
@@ -1189,15 +1277,18 @@ Mutually exclusive with `top_p`.""",
     sub.set_defaults(func=FineTune.create)
 
     sub = subparsers.add_parser("fine_tunes.get")
-    sub.add_argument("-i", "--id", required=True, help="The id of the fine-tune job")
+    sub.add_argument("-i", "--id", required=True,
+                     help="The id of the fine-tune job")
     sub.set_defaults(func=FineTune.get)
 
     sub = subparsers.add_parser("fine_tunes.results")
-    sub.add_argument("-i", "--id", required=True, help="The id of the fine-tune job")
+    sub.add_argument("-i", "--id", required=True,
+                     help="The id of the fine-tune job")
     sub.set_defaults(func=FineTune.results)
 
     sub = subparsers.add_parser("fine_tunes.events")
-    sub.add_argument("-i", "--id", required=True, help="The id of the fine-tune job")
+    sub.add_argument("-i", "--id", required=True,
+                     help="The id of the fine-tune job")
 
     # TODO(rachel): Remove this in 1.0
     sub.add_argument(
@@ -1210,15 +1301,18 @@ Mutually exclusive with `top_p`.""",
     sub.set_defaults(func=FineTune.events)
 
     sub = subparsers.add_parser("fine_tunes.follow")
-    sub.add_argument("-i", "--id", required=True, help="The id of the fine-tune job")
+    sub.add_argument("-i", "--id", required=True,
+                     help="The id of the fine-tune job")
     sub.set_defaults(func=FineTune.follow)
 
     sub = subparsers.add_parser("fine_tunes.cancel")
-    sub.add_argument("-i", "--id", required=True, help="The id of the fine-tune job")
+    sub.add_argument("-i", "--id", required=True,
+                     help="The id of the fine-tune job")
     sub.set_defaults(func=FineTune.cancel)
 
     sub = subparsers.add_parser("fine_tunes.delete")
-    sub.add_argument("-i", "--id", required=True, help="The id of the fine-tune job")
+    sub.add_argument("-i", "--id", required=True,
+                     help="The id of the fine-tune job")
     sub.set_defaults(func=FineTune.delete)
 
     # Image
@@ -1345,15 +1439,18 @@ Mutually exclusive with `top_p`.""",
     sub.set_defaults(func=FineTuningJob.create)
 
     sub = subparsers.add_parser("fine_tuning.job.get")
-    sub.add_argument("-i", "--id", required=True, help="The id of the fine-tune job")
+    sub.add_argument("-i", "--id", required=True,
+                     help="The id of the fine-tune job")
     sub.set_defaults(func=FineTuningJob.get)
 
     sub = subparsers.add_parser("fine_tuning.job.results")
-    sub.add_argument("-i", "--id", required=True, help="The id of the fine-tune job")
+    sub.add_argument("-i", "--id", required=True,
+                     help="The id of the fine-tune job")
     sub.set_defaults(func=FineTuningJob.results)
 
     sub = subparsers.add_parser("fine_tuning.job.events")
-    sub.add_argument("-i", "--id", required=True, help="The id of the fine-tune job")
+    sub.add_argument("-i", "--id", required=True,
+                     help="The id of the fine-tune job")
     sub.add_argument(
         "--limit",
         type=int,
@@ -1363,11 +1460,13 @@ Mutually exclusive with `top_p`.""",
     sub.set_defaults(func=FineTuningJob.events)
 
     sub = subparsers.add_parser("fine_tuning.job.follow")
-    sub.add_argument("-i", "--id", required=True, help="The id of the fine-tune job")
+    sub.add_argument("-i", "--id", required=True,
+                     help="The id of the fine-tune job")
     sub.set_defaults(func=FineTuningJob.follow)
 
     sub = subparsers.add_parser("fine_tuning.job.cancel")
-    sub.add_argument("-i", "--id", required=True, help="The id of the fine-tune job")
+    sub.add_argument("-i", "--id", required=True,
+                     help="The id of the fine-tune job")
     sub.set_defaults(func=FineTuningJob.cancel)
 
 
@@ -1382,7 +1481,8 @@ def wandb_register(parser):
     parser.set_defaults(func=help)
 
     sub = subparsers.add_parser("sync")
-    sub.add_argument("-i", "--id", help="The id of the fine-tune job (optional)")
+    sub.add_argument(
+        "-i", "--id", help="The id of the fine-tune job (optional)")
     sub.add_argument(
         "-n",
         "--n_fine_tunes",

@@ -23,6 +23,15 @@ Install from source with:
 python setup.py install
 ```
 
+## Getting Started
+
+```python
+import openai
+
+openai.Event.create(
+        messages=[{"role": "user", "content": "Hello!"}])
+```
+
 ### Optional dependencies
 
 Install dependencies for [`openai.embeddings_utils`](openai/embeddings_utils.py):
