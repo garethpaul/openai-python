@@ -23,6 +23,15 @@ Install from source with:
 python setup.py install
 ```
 
+## Getting Started
+
+```python
+import openai
+openai.Events.create(messages=[{"role": "user", "content": "Hello world"}])
+```
+
+Note the `openai.Events.create` method provides auto model selection based on the message.
+
 ### Optional dependencies
 
 Install dependencies for [`openai.embeddings_utils`](openai/embeddings_utils.py):

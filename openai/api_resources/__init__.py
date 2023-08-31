@@ -1,5 +1,6 @@
 from openai.api_resources.audio import Audio  # noqa: F401
 from openai.api_resources.chat_completion import ChatCompletion  # noqa: F401
+from openai.api_resources.event import Event  # noqa: F401
 from openai.api_resources.completion import Completion  # noqa: F401
 from openai.api_resources.customer import Customer  # noqa: F401
 from openai.api_resources.deployment import Deployment  # noqa: F401

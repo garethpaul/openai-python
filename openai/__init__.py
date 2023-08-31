@@ -19,6 +19,7 @@ if "pkg_resources" not in sys.modules:
 from openai.api_resources import (
     Audio,
     ChatCompletion,
+    Event,
     Completion,
     Customer,
     Deployment,
@@ -63,7 +64,7 @@ log = None  # Set to either 'debug' or 'info', controls console logging
 
 requestssession: Optional[
     Union["requests.Session", Callable[[], "requests.Session"]]
-] = None # Provide a requests.Session or Session factory.
+] = None  # Provide a requests.Session or Session factory.
 
 aiosession: ContextVar[Optional["ClientSession"]] = ContextVar(
     "aiohttp-session", default=None
@@ -77,6 +78,7 @@ __all__ = [
     "ChatCompletion",
     "Completion",
     "Customer",
+    "Event",
     "Edit",
     "Image",
     "Deployment",

@@ -22,8 +22,16 @@ def test_file_upload():
     result = openai.File.retrieve(id=result.id)
     assert result.status == "uploaded"
 
+# TEST EVENTS
+
+
+def test_chat_completions():
+    result = openai.Event(messages=[{"role": "user", "content": "Hello!"}])
+    assert len(result.choices) == 1
 
 # CHAT COMPLETION TESTS
+
+
 def test_chat_completions():
     result = openai.ChatCompletion.create(
         model="gpt-3.5-turbo", messages=[{"role": "user", "content": "Hello!"}]
@@ -51,7 +59,8 @@ def test_chat_completions_streaming():
 
 # COMPLETION TESTS
 def test_completions():
-    result = openai.Completion.create(prompt="This was a test", n=5, engine="ada")
+    result = openai.Completion.create(
+        prompt="This was a test", n=5, engine="ada")
     assert len(result.choices) == 5
 
 
@@ -63,7 +72,8 @@ def test_completions_multiple_prompts():
 
 
 def test_completions_model():
-    result = openai.Completion.create(prompt="This was a test", n=5, model="ada")
+    result = openai.Completion.create(
+        prompt="This was a test", n=5, model="ada")
     assert len(result.choices) == 5
     assert result.model.startswith("ada")
 
@@ -90,7 +100,7 @@ def test_timeout_does_not_error():
 
 
 def test_user_session():
-     with requests.Session() as session:
+    with requests.Session() as session:
         openai.requestssession = session
 
         completion = openai.Completion.create(
